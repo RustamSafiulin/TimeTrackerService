@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Изучаем Vue.js</title>
+<meta charset="utf-8" />
+</head>
+<body>
+<h1>Test</h1>
+<div id="app">
+    <input type="text" v-on:input="setMessage" />
+    <p>{{message}}</p>
+</div>
+
+<script src="/static/lib/vue.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            newTask: "",
+            message: 'Hello Vue!'
+        },
+        created: {
+
+        },
+        methods: {
+            setMessage: function(event){
+                this.message = event.target.value;
+            }
+        }
+    })
+</script>
+</body>
+</html>

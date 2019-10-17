@@ -9,8 +9,10 @@ import (
 	"path/filepath"
 	"time"
 
+	pb "github.com/RustamSafiulin/TimeTrackerService/mail_service/api"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/render"
+	"google.golang.org/grpc"
 )
 
 func InitializeApi(config *Config) *martini.ClassicMartini {
@@ -19,7 +21,18 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	api.Use(render.Renderer(render.Options{
 		Charset:    "UTF-8",
 		IndentJSON: true,
+		Directory:  "../public/static/views",
+		Extensions: []string{".html"},
+		Delims:     render.Delims{"{[{", "}]}"},
 	}))
+
+	grpcConn, err := grpc.Dial("localhost:3001", grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("grpc dial failed: %v", err)
+		return nil
+	}
+
+	mailClient := pb.NewMailServiceClient(grpcConn)
 
 	storage := NewMongoStorage(config.MongoUrl, config.DbName)
 	provider := NewServiceProvider(storage)
@@ -28,6 +41,7 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	baseProvider = provider
 
 	api.MapTo(baseProvider, (*BaseServiceProvider)(nil))
+	api.MapTo(mailClient, (*pb.MailServiceClient)(nil))
 
 	api.Post("/api/v1/signin", func(provider BaseServiceProvider, rnd render.Render, r *http.Request, w http.ResponseWriter) {
 		var loginInfo Profile
@@ -114,8 +128,27 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 		}
 	})
 
-	api.Post("/api/v1/reset_password", func(provider BaseServiceProvider, r *http.Request, w http.ResponseWriter) {
+	api.Post("/api/v1/reset_password", func(mailClient pb.MailServiceClient, rnd render.Render, provider BaseServiceProvider, r *http.Request, w http.ResponseWriter) {
 
+		profileService := provider.GetProfileService()
+		err := profileService.AuthBySessionToken(r)
+
+		if err == ErrUnauthoriazedAccess {
+			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
+			return
+		}
+
+		/*
+			ctx, cancel := context.WithTimeout(context.TODO(), 15 * time.Second)
+			defer cancel()
+
+			sendMailRequest := &pb.SendMailRequest{Body: "TestMessage"}
+			if sendMailResponse, err := mailClient.SendMail(ctx, sendMailRequest); err == nil {
+
+			} else {
+
+			}
+		*/
 	})
 
 	//PROFILES
@@ -471,6 +504,10 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 			return
 
 		}
+	})
+
+	api.Get("/", func(r render.Render) {
+		r.HTML(200, "index", nil)
 	})
 
 	return api

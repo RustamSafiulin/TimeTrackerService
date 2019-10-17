@@ -1,1 +1,1 @@
-protoc --proto_path=../api --go_out=plugins=grpc:../api add.proto
+protoc --proto_path=../mail_service/api --go_out=plugins=grpc:../mail_service/api mail.proto

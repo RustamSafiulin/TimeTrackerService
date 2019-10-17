@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package api;
+
+enum SendMailStatus {
+    MailQueuedSuccess = 0;
+    MailQueuedFailed = 1;
+}
+
+message SendMailRequest {
+    string body = 1;
+}
+
+message SendMailResponse {
+    SendMailStatus send_status = 1;
+}
+
+service MailService {
+    rpc SendMail (SendMailRequest) returns (SendMailResponse) {
+    }
+}
