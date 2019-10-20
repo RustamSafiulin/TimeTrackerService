@@ -8,14 +8,17 @@ clean:
 	@rm -r bin || true
 
 $(executable):
-	@echo Get all dependecies for build
+	@echo Get all dependencies of $(executable)
 	go get -d .
 
 	@echo Building $(executable)
-	go build -o bin/$@ main.go
+	go build -o bin/$(executable) .
 
 build:
+	@echo Get all dependencies of $(executable)
+	go get -d .
+
 	@echo Building $(executable)
-	go build -o bin/$@ main.go
+	go build -o bin/$(executable) .
 
 .PHONY: $(executable) clean build
