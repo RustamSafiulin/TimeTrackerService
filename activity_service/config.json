@@ -1,4 +1,4 @@
 {
 	"db_name" : "time_tracker_db",
-	"mongodb_url" : "mongodb://127.0.0.1"
+	"mongodb_url" : "mongodb://test_admin:qwer~123@mongo_container:27017/time_tracker_db"
 }

@@ -26,7 +26,7 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 		Delims:     render.Delims{"{[{", "}]}"},
 	}))
 
-	grpcConn, err := grpc.Dial("localhost:3001", grpc.WithInsecure())
+	grpcConn, err := grpc.Dial("mail_service_container:3001", grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("grpc dial failed: %v", err)
 		return nil

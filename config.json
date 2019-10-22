@@ -1,4 +1,0 @@
-{
-	"db_name" : "time_tracker_db",
-	"mongodb_url" : "mongodb://127.0.0.1"
-}

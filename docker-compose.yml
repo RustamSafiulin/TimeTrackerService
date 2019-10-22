@@ -1,0 +1,27 @@
+version: "3"
+
+services: 
+  activity_service:
+    build: ./activity_service
+    ports: 
+     - "3000:3000"
+    depends_on:
+     - "mail_service"
+     - "mongo_database"
+  mail_service: 
+    build: ./mail_service
+    container_name: "mail_service_container"
+    ports:
+     - "3001:3001"
+  mongo_database:
+    image: "mongo"
+    container_name: "mongo_container"
+    environment:
+     - MONGO_INITDB_ROOT_USERNAME="test_admin"
+     - MONGO_INITDB_ROOT_PASSWORD="qwer~123"
+     - MONGO_INITDB_DATABASE=time_tracker_db
+    ports:
+     - "27017-27019:27017-27019"
+    volumes:
+     - ./mongo-volume:/data/db
+     - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro

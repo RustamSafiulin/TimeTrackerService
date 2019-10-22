@@ -12,6 +12,7 @@ type MongoDbStorage struct {
 }
 
 func NewMongoStorage(url string, dbName string) *MongoDbStorage {
+    log.Println(url)
 	s, err := mgo.Dial(url)
 	if err != nil {
 		log.Fatal(err.Error())
