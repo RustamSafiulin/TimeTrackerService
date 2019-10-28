@@ -7,13 +7,15 @@ import (
 )
 
 var (
-	ErrNotExists           = errors.New("Doesn't exist")
-	ErrAlreadyExists       = errors.New("Already exists")
-	ErrProfileDoesntExist  = errors.New("Profile doesn't exist")
-	ErrWrongPassword       = errors.New("Wrong password")
-	ErrStorageError        = errors.New("Storage operation error")
-	ErrBadHttpRequestBody  = errors.New("Bad http request body")
-	ErrUnauthoriazedAccess = errors.New("Unauthorized access")
+	ErrNotExists                = errors.New("Doesn't exist")
+	ErrAlreadyExists            = errors.New("Already exists")
+	ErrProfileDoesntExist       = errors.New("Profile doesn't exist")
+	ErrWrongPassword            = errors.New("Wrong password")
+	ErrStorageError             = errors.New("Storage operation error")
+	ErrBadHttpRequestBody       = errors.New("Bad http request body")
+	ErrUnauthoriazedAccess      = errors.New("Unauthorized access")
+	ErrCreateJwtToken           = errors.New("Error creation authorization token")
+	ErrParseAuthorizationHeader = errors.New("Error during parse authorization http header")
 )
 
 type ErrorMsg struct {

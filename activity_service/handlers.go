@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	pb "github.com/RustamSafiulin/TimeTrackerService/mail_service/api"
 	"github.com/go-martini/martini"
@@ -64,13 +63,7 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 			rnd.JSON(http.StatusInternalServerError, ErrorMsg{err.Error()})
 			return
 		case nil:
-			http.SetCookie(w, &http.Cookie{
-				Name:    "session_token",
-				Value:   sessionInfo.SessionId,
-				Expires: time.Now().Add(10 * 12 * 30 * 24 * time.Hour),
-			})
 			rnd.JSON(http.StatusOK, sessionInfo)
-
 			return
 		default:
 			rnd.JSON(http.StatusInternalServerError, ErrorMsg{"Unknown error"})
@@ -107,14 +100,20 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	api.Post("/api/v1/logout", func(provider BaseServiceProvider, rnd render.Render, r *http.Request, w http.ResponseWriter) {
 
 		profileService := provider.GetProfileService()
-		err := profileService.AuthBySessionToken(r)
+		tokenString, err := profileService.ExtractTokenFromRequest(r)
+		if err == ErrParseAuthorizationHeader {
+			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
+			return
+		}
+
+		err = profileService.AuthBySessionToken(tokenString)
 
 		if err == ErrUnauthoriazedAccess {
 			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
 			return
 		}
 
-		err = profileService.Logout(r)
+		err = profileService.Logout(tokenString)
 		switch err {
 		case ErrStorageError:
 			rnd.JSON(http.StatusInternalServerError, ErrorMsg{err.Error()})
@@ -131,7 +130,13 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	api.Post("/api/v1/reset_password", func(mailClient pb.MailServiceClient, rnd render.Render, provider BaseServiceProvider, r *http.Request, w http.ResponseWriter) {
 
 		profileService := provider.GetProfileService()
-		err := profileService.AuthBySessionToken(r)
+		tokenString, err := profileService.ExtractTokenFromRequest(r)
+		if err == ErrParseAuthorizationHeader {
+			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
+			return
+		}
+
+		err = profileService.AuthBySessionToken(tokenString)
 
 		if err == ErrUnauthoriazedAccess {
 			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
@@ -161,7 +166,13 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	api.Get("/api/v1/profiles/:profile_id/avatar", func(provider BaseServiceProvider, rnd render.Render, params martini.Params, r *http.Request, w http.ResponseWriter) {
 
 		profileService := provider.GetProfileService()
-		err := profileService.AuthBySessionToken(r)
+		tokenString, err := profileService.ExtractTokenFromRequest(r)
+		if err == ErrParseAuthorizationHeader {
+			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
+			return
+		}
+
+		err = profileService.AuthBySessionToken(tokenString)
 
 		if err == ErrUnauthoriazedAccess {
 			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
@@ -194,7 +205,13 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	api.Post("/api/v1/profiles/:profile_id/avatar", func(provider BaseServiceProvider, rnd render.Render, params martini.Params, r *http.Request, w http.ResponseWriter) {
 
 		profileService := provider.GetProfileService()
-		err := profileService.AuthBySessionToken(r)
+		tokenString, err := profileService.ExtractTokenFromRequest(r)
+		if err == ErrParseAuthorizationHeader {
+			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
+			return
+		}
+
+		err = profileService.AuthBySessionToken(tokenString)
 
 		if err == ErrUnauthoriazedAccess {
 			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
@@ -246,7 +263,13 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	api.Get("/api/v1/profiles/:profile_id", func(provider BaseServiceProvider, rnd render.Render, params martini.Params, r *http.Request, w http.ResponseWriter) {
 
 		profileService := provider.GetProfileService()
-		err := profileService.AuthBySessionToken(r)
+		tokenString, err := profileService.ExtractTokenFromRequest(r)
+		if err == ErrParseAuthorizationHeader {
+			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
+			return
+		}
+
+		err = profileService.AuthBySessionToken(tokenString)
 
 		if err == ErrUnauthoriazedAccess {
 			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
@@ -281,7 +304,13 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	api.Post("/api/v1/activities", func(provider BaseServiceProvider, rnd render.Render, params martini.Params, r *http.Request, w http.ResponseWriter) {
 
 		profileService := provider.GetProfileService()
-		err := profileService.AuthBySessionToken(r)
+		tokenString, err := profileService.ExtractTokenFromRequest(r)
+		if err == ErrParseAuthorizationHeader {
+			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
+			return
+		}
+
+		err = profileService.AuthBySessionToken(tokenString)
 
 		if err == ErrUnauthoriazedAccess {
 			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
@@ -319,7 +348,13 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	api.Get("/api/v1/activities", func(provider BaseServiceProvider, rnd render.Render, params martini.Params, r *http.Request, w http.ResponseWriter) {
 
 		profileService := provider.GetProfileService()
-		err := profileService.AuthBySessionToken(r)
+		tokenString, err := profileService.ExtractTokenFromRequest(r)
+		if err == ErrParseAuthorizationHeader {
+			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
+			return
+		}
+
+		err = profileService.AuthBySessionToken(tokenString)
 
 		if err == ErrUnauthoriazedAccess {
 			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
@@ -352,10 +387,14 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	//get specific activity info for profile
 	api.Get("/api/v1/activities/:activity_id", func(provider BaseServiceProvider, rnd render.Render, params martini.Params, r *http.Request, w http.ResponseWriter) {
 
-		log.Println("Get activity by id")
-
 		profileService := provider.GetProfileService()
-		err := profileService.AuthBySessionToken(r)
+		tokenString, err := profileService.ExtractTokenFromRequest(r)
+		if err == ErrParseAuthorizationHeader {
+			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
+			return
+		}
+
+		err = profileService.AuthBySessionToken(tokenString)
 
 		if err == ErrUnauthoriazedAccess {
 			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
@@ -383,7 +422,13 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	api.Post("/api/v1/activities/:activity_id", func(provider BaseServiceProvider, rnd render.Render, params martini.Params, r *http.Request, w http.ResponseWriter) {
 
 		profileService := provider.GetProfileService()
-		err := profileService.AuthBySessionToken(r)
+		tokenString, err := profileService.ExtractTokenFromRequest(r)
+		if err == ErrParseAuthorizationHeader {
+			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
+			return
+		}
+
+		err = profileService.AuthBySessionToken(tokenString)
 
 		if err == ErrUnauthoriazedAccess {
 			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
@@ -417,7 +462,13 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	api.Delete("/api/v1/activities/:activity_id", func(provider BaseServiceProvider, rnd render.Render, params martini.Params, r *http.Request, w http.ResponseWriter) {
 
 		profileService := provider.GetProfileService()
-		err := profileService.AuthBySessionToken(r)
+		tokenString, err := profileService.ExtractTokenFromRequest(r)
+		if err == ErrParseAuthorizationHeader {
+			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
+			return
+		}
+
+		err = profileService.AuthBySessionToken(tokenString)
 
 		if err == ErrUnauthoriazedAccess {
 			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
@@ -446,7 +497,13 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	api.Post("/api/v1/profiles/:profile_id/settings", func(provider BaseServiceProvider, rnd render.Render, params martini.Params, r *http.Request, w http.ResponseWriter) {
 
 		profileService := provider.GetProfileService()
-		err := profileService.AuthBySessionToken(r)
+		tokenString, err := profileService.ExtractTokenFromRequest(r)
+		if err == ErrParseAuthorizationHeader {
+			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
+			return
+		}
+
+		err = profileService.AuthBySessionToken(tokenString)
 
 		if err == ErrUnauthoriazedAccess {
 			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
@@ -481,7 +538,13 @@ func InitializeApi(config *Config) *martini.ClassicMartini {
 	api.Get("/api/v1/profiles/:profile_id/settings", func(provider BaseServiceProvider, rnd render.Render, params martini.Params, r *http.Request, w http.ResponseWriter) {
 
 		profileService := provider.GetProfileService()
-		err := profileService.AuthBySessionToken(r)
+		tokenString, err := profileService.ExtractTokenFromRequest(r)
+		if err == ErrParseAuthorizationHeader {
+			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})
+			return
+		}
+
+		err = profileService.AuthBySessionToken(tokenString)
 
 		if err == ErrUnauthoriazedAccess {
 			rnd.JSON(http.StatusUnauthorized, ErrorMsg{ErrUnauthoriazedAccess.Error()})

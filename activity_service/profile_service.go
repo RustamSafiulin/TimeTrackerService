@@ -1,12 +1,23 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"net/http"
+	"strings"
+	"time"
 
-	uuid "github.com/satori/go.uuid"
+	jwt "github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/mgo.v2/bson"
 )
+
+var jwtKey = []byte("test_secret_key")
+
+type JwtClaims struct {
+	Username string
+	jwt.StandardClaims
+}
 
 type ProfileService struct {
 	storage *MongoDbStorage
@@ -64,8 +75,24 @@ func (service *ProfileService) Login(p *Profile) (*SessionInfo, error) {
 		return nil, ErrWrongPassword
 	}
 
-	sessionToken, _ := uuid.NewV4()
-	storeSession := &SessionInfo{Id: bson.NewObjectId(), ProfileId: existingProfiles[0].Id, SessionId: sessionToken.String()}
+	expirationTime := time.Now().Add(24 * time.Hour)
+	claims := &JwtClaims{
+		Username: existingProfiles[0].Id.String(),
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtKey)
+
+	if err != nil {
+		return nil, ErrCreateJwtToken
+	}
+
+	log.Printf("JWT token: %s", tokenString)
+
+	storeSession := &SessionInfo{Id: bson.NewObjectId(), ProfileId: existingProfiles[0].Id, SessionId: tokenString}
 	sessionCollection := dbStorage.mgoSession.DB(dbStorage.dbName).C("sessions")
 
 	if err := sessionCollection.Insert(storeSession); err != nil {
@@ -75,14 +102,13 @@ func (service *ProfileService) Login(p *Profile) (*SessionInfo, error) {
 	return storeSession, nil
 }
 
-func (service *ProfileService) Logout(r *http.Request) error {
+func (service *ProfileService) Logout(tokenString string) error {
 
-	c, _ := r.Cookie("session_token")
 	dbStorage := service.storage
 	sessionCollection := dbStorage.mgoSession.DB(dbStorage.dbName).C("sessions")
 	query := bson.M{
 		"session_id": bson.M{
-			"$eq": c.Value,
+			"$eq": tokenString,
 		},
 	}
 
@@ -178,10 +204,21 @@ func (service *ProfileService) GetProfileAvatar(id string) (string, error) {
 	return avatars[0].AvatarFilePath, nil
 }
 
-func (service *ProfileService) AuthBySessionToken(r *http.Request) error {
+func (service *ProfileService) AuthBySessionToken(tokenString string) error {
 
-	c, err := r.Cookie("session_token")
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Error during check access token")
+		}
+
+		return jwtKey, nil
+	})
+
 	if err != nil {
+		return ErrUnauthoriazedAccess
+	}
+
+	if !token.Valid {
 		return ErrUnauthoriazedAccess
 	}
 
@@ -189,7 +226,7 @@ func (service *ProfileService) AuthBySessionToken(r *http.Request) error {
 	sessionCollection := dbStorage.mgoSession.DB(dbStorage.dbName).C("sessions")
 	query := bson.M{
 		"session_id": bson.M{
-			"$eq": c.Value,
+			"$eq": tokenString,
 		},
 	}
 
@@ -201,4 +238,21 @@ func (service *ProfileService) AuthBySessionToken(r *http.Request) error {
 	}
 
 	return nil
+}
+
+func (service *ProfileService) ExtractTokenFromRequest(r *http.Request) (string, error) {
+
+	authorizationHeader := r.Header.Get("Authorization")
+	if authorizationHeader != "" {
+		bearerToken := strings.Split(authorizationHeader, " ")
+
+		if len(bearerToken) == 2 {
+			return bearerToken[1], nil
+		} else {
+			return "", ErrParseAuthorizationHeader
+		}
+
+	} else {
+		return "", ErrParseAuthorizationHeader
+	}
 }
